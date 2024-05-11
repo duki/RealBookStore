@@ -6,10 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,12 +23,14 @@ public class CommentRepository {
     }
 
     public void create(Comment comment) {
-        String query = "insert into comments(bookId, userId, comment) values (" + comment.getBookId() + ", " + comment.getUserId() + ", '" + comment.getComment() + "')";
-
+        String query = "insert into comments(bookId, userId, comment) values (?, ?, ?)";
         try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement();
+             PreparedStatement stmt = connection.prepareStatement(query);
         ) {
-            statement.execute(query);
+            stmt.setInt(1, comment.getBookId());
+            stmt.setInt(2, comment.getUserId());
+            stmt.setString(3, comment.getComment());
+            stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
