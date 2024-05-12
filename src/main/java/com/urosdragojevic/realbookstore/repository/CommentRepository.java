@@ -1,5 +1,6 @@
 package com.urosdragojevic.realbookstore.repository;
 
+import com.urosdragojevic.realbookstore.audit.AuditLogger;
 import com.urosdragojevic.realbookstore.domain.Comment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,16 +25,20 @@ public class CommentRepository {
 
     public void create(Comment comment) {
         String query = "insert into comments(bookId, userId, comment) values (?, ?, ?)";
+
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(query);
         ) {
-            stmt.setInt(1, comment.getBookId());
-            stmt.setInt(2, comment.getUserId());
-            stmt.setString(3, comment.getComment());
-            stmt.executeUpdate();
+            PreparedStatement statement = connection.prepareStatement(query);
+
+            statement.setInt(1, comment.getBookId());
+            statement.setInt(2, comment.getUserId());
+            statement.setString(3, comment.getComment());
+            statement.executeUpdate();
         } catch (SQLException e) {
+            LOG.warn("Failed adding comment: " + comment.getComment());
             e.printStackTrace();
         }
+        AuditLogger.getAuditLogger(CommentRepository.class).audit("Adding comment " + comment.getComment());
     }
 
     public List<Comment> getAll(int bookId) {
@@ -46,6 +51,7 @@ public class CommentRepository {
                 commentList.add(new Comment(rs.getInt(1), rs.getInt(2), rs.getString(3)));
             }
         } catch (SQLException e) {
+            LOG.warn("Failed to return a book with id " + bookId);
             e.printStackTrace();
         }
         return commentList;
